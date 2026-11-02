@@ -364,7 +364,7 @@ function drawPanel(ctx, x, y, w, h, title, borderCol='#1e293b') {
 
   ctx.fillStyle = '#38bdf8';
   ctx.font = 'bold 12.5px Inter, Cairo, sans-serif';
-  ctx.fillText(title, x + 10, y + 18);
+  ctx.fillText(title, x + 10, y + 18, w - 20);
 }
 
 function drawTopBanner(ctx, code, qBadge, title, meta, qDetail) {
@@ -380,29 +380,29 @@ function drawTopBanner(ctx, code, qBadge, title, meta, qDetail) {
   ctx.fillStyle = '#0284c7';
   ctx.beginPath(); ctx.roundRect(20, 15, 120, 22, 5); ctx.fill();
   ctx.fillStyle = '#fff'; ctx.font = 'bold 12px Inter, sans-serif';
-  ctx.fillText(code, 30, 30);
+  ctx.fillText(code, 30, 30, 105);
 
   // Right Quartile badge
   ctx.fillStyle = '#16a34a';
   ctx.beginPath(); ctx.roundRect(1140, 14, 240, 22, 5); ctx.fill();
   ctx.fillStyle = '#fff'; ctx.font = 'bold 11.5px Inter, sans-serif';
-  ctx.fillText(qBadge, 1150, 29);
+  ctx.fillText(qBadge, 1150, 29, 224);
 
   // Title
   ctx.fillStyle = '#ffffff'; ctx.font = 'bold 14px Inter, sans-serif';
-  ctx.fillText(title.length > 105 ? title.substring(0, 105) + '...' : title, 150, 30);
+  ctx.fillText(title, 150, 30, 975);
 
   // Meta & Quartile Detail
   ctx.fillStyle = '#94a3b8'; ctx.font = '11.5px Inter, sans-serif';
-  ctx.fillText(meta, 20, 50);
+  ctx.fillText(meta, 20, 50, 1350);
   ctx.fillStyle = '#fde047'; ctx.font = 'bold 11.5px Inter, sans-serif';
-  ctx.fillText(qDetail, 20, 67);
+  ctx.fillText(qDetail, 20, 67, 1350);
 }
 
 function drawHumanAvatar(ctx, cx, floorY, kneeDeg, hipDeg, boxKg, exoCol, sensors) {
   const rk = (kneeDeg * Math.PI) / 180;
   const rh = (hipDeg * Math.PI) / 180;
-  const Ls = 68, Lt = 70, Ltr = 82;
+  const Ls = 72, Lt = 76, Ltr = 86;
 
   const ax = cx, ay = floorY;
   const kx = ax + Math.sin(rk * 0.45) * Ls;
@@ -440,32 +440,50 @@ function drawHumanAvatar(ctx, cx, floorY, kneeDeg, hipDeg, boxKg, exoCol, sensor
 
   // Arms & Box
   if (boxKg > 0) {
-    const bx = sx + 38, by = sy + 36;
+    const bx = sx + 42, by = sy + 34;
     ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 5;
     ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(bx, by); ctx.stroke();
     ctx.fillStyle = '#0284c7'; ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.roundRect(bx - 14, by - 12, 48, 36, 5); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 12px Inter, sans-serif';
-    ctx.fillText(boxKg + 'kg', bx - 6, by + 10);
+    ctx.beginPath(); ctx.roundRect(bx - 12, by - 14, 46, 34, 5); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 11.5px Inter, sans-serif';
+    ctx.fillText(boxKg + 'kg', bx - 4, by + 7);
   }
 
-  // Glowing Sensor Nodes on Body
-  const pulse = (Math.sin(tick * 0.15) + 1) * 3;
-  (sensors || []).forEach(s => {
+  // Non-overlapping Biomechanical HUD Sensor Rack + Live Tracking Leader Lines
+  const pulse = (Math.sin(tick * 0.15) + 1) * 2.5;
+  (sensors || []).forEach((s, idx) => {
     let px = kx, py = ky;
-    if (s.pos === 'knee') { px = kx; py = ky; }
-    else if (s.pos === 'thigh') { px = (kx + hx)/2 + 6; py = (ky + hy)/2; }
-    else if (s.pos === 'shank') { px = (ax + kx)/2 + 6; py = (ay + ky)/2; }
-    else if (s.pos === 'insole') { px = ax + 12; py = ay + 2; }
-    else if (s.pos === 'chest') { px = (hx + sx)/2; py = (hy + sy)/2; }
+    if (s.pos === 'chest') { px = (hx + sx)/2; py = (hy + sy)/2 - 10; }
     else if (s.pos === 'waist') { px = hx; py = hy; }
-    else if (s.pos === 'quad_emg') { px = (kx + hx)/2 - 10; py = (ky + hy)/2 - 6; }
+    else if (s.pos === 'quad_emg') { px = hx + (kx - hx)*0.45 - 6; py = hy + (ky - hy)*0.45 - 4; }
+    else if (s.pos === 'thigh') { px = hx + (kx - hx)*0.65 + 6; py = hy + (ky - hy)*0.65; }
+    else if (s.pos === 'knee') { px = kx; py = ky; }
+    else if (s.pos === 'shank') { px = (ax + kx)/2 + 6; py = (ay + ky)/2; }
+    else if (s.pos === 'insole') { px = ax + 14; py = ay + 2; }
 
-    ctx.fillStyle = s.active ? '#4ade80' : '#fbbf24';
-    ctx.beginPath(); ctx.arc(px, py, 4.5 + pulse*0.4, 0, Math.PI*2); ctx.fill();
+    const col = s.active ? '#4ade80' : '#fbbf24';
+    // Glowing dot on body
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.arc(px, py, 4.5 + pulse*0.35, 0, Math.PI*2); ctx.fill();
+
+    // Fixed HUD badge in top rack of Panel 1 (x=20, y=114 + idx*22)
+    const bx = 20, by = 113 + idx * 22, bw = 205, bh = 18;
+    ctx.fillStyle = s.active ? 'rgba(22, 163, 74, 0.16)' : 'rgba(217, 119, 6, 0.16)';
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 4); ctx.fill(); ctx.stroke();
+
     ctx.fillStyle = s.active ? '#86efac' : '#fde047';
     ctx.font = 'bold 10px Inter, sans-serif';
-    ctx.fillText(s.lbl, px + 9, py + 3);
+    ctx.fillText((s.active ? '● ' : '○ ') + s.lbl, bx + 6, by + 13, bw - 12);
+
+    // Dynamic tracking leader line from badge right edge to live body sensor dot
+    ctx.strokeStyle = s.active ? 'rgba(74,222,128,0.40)' : 'rgba(251,191,36,0.35)';
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    ctx.moveTo(bx + bw, by + bh/2);
+    ctx.lineTo(px, py);
+    ctx.stroke();
   });
 
   return { ax, ay, kx, ky, hx, hy, sx, sy };
@@ -474,24 +492,24 @@ function drawHumanAvatar(ctx, cx, floorY, kneeDeg, hipDeg, boxKg, exoCol, sensor
 function drawSignalFlowPipeline(ctx, x, y, w, h, activeIn, computedOut, modeBadge, eqLines) {
   drawPanel(ctx, x, y, w, h, '4 & 5. Sensor Signal Flow (Inputs ➔ Controller Equations ➔ Outputs)');
 
-  const bw = (w - 50) / 3;
+  const bw = (w - 44) / 3;
   const bh = 86;
   const by = y + 36;
 
   const boxes = [
-    [x + 12, 'A) SENSORY INPUTS', activeIn, '#0284c7'],
-    [x + 24 + bw, 'B) COMPUTED OUTPUTS', computedOut, '#9333ea'],
-    [x + 36 + bw*2, 'C) LOOP UTILIZATION', modeBadge, '#16a34a']
+    [x + 10, 'A) SENSORY INPUTS', activeIn, '#0284c7'],
+    [x + 22 + bw, 'B) COMPUTED OUTPUTS', computedOut, '#9333ea'],
+    [x + 34 + bw*2, 'C) LOOP UTILIZATION', modeBadge, '#16a34a']
   ];
 
   boxes.forEach(([bx, title, lines, col], i) => {
     ctx.fillStyle = '#070b14'; ctx.strokeStyle = col; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 6); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = col; ctx.font = 'bold 11px Inter, sans-serif';
-    ctx.fillText(title, bx + 8, by + 16);
+    ctx.fillStyle = col; ctx.font = 'bold 10.5px Inter, sans-serif';
+    ctx.fillText(title, bx + 6, by + 16, bw - 12);
     lines.forEach((l, li) => {
-      ctx.fillStyle = '#e2e8f0'; ctx.font = '10.8px Inter, Cairo, sans-serif';
-      ctx.fillText(l, bx + 8, by + 34 + li * 16);
+      ctx.fillStyle = '#e2e8f0'; ctx.font = '10.5px Inter, Cairo, sans-serif';
+      ctx.fillText(l, bx + 6, by + 34 + li * 16, bw - 12);
     });
 
     // Animated pulses along arrows between boxes
@@ -508,12 +526,12 @@ function drawSignalFlowPipeline(ctx, x, y, w, h, activeIn, computedOut, modeBadg
   const eh = h - (bh + 54);
   ctx.fillStyle = 'rgba(245, 158, 11, 0.08)';
   ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 1.2;
-  ctx.beginPath(); ctx.roundRect(x + 12, ey, w - 24, eh, 6); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.roundRect(x + 10, ey, w - 20, eh, 6); ctx.fill(); ctx.stroke();
 
-  ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 11.5px Fira Code, monospace';
+  ctx.font = 'bold 11px Fira Code, monospace';
   eqLines.forEach((eq, idx) => {
     ctx.fillStyle = idx === 0 ? '#fbbf24' : '#e2e8f0';
-    ctx.fillText(eq, x + 20, ey + 19 + idx * 18);
+    ctx.fillText(eq, x + 16, ey + 19 + idx * 18, w - 32);
   });
 }
 
@@ -554,51 +572,51 @@ function drawOscilloscope(ctx, x, y, w, h, title, fn1, col1, lbl1, fn2, col2, lb
   }
 
   // Legend
-  ctx.font = 'bold 11px Inter, sans-serif';
-  ctx.fillStyle = col1; ctx.fillText('▬ ' + lbl1, gx + 6, y + h - 12);
+  ctx.font = 'bold 10.5px Inter, sans-serif';
+  ctx.fillStyle = col1; ctx.fillText('▬ ' + lbl1, gx + 4, y + h - 12, 238);
   if (lbl2) {
-    ctx.fillStyle = col2; ctx.fillText('▬ ' + lbl2, gx + 210, y + h - 12);
+    ctx.fillStyle = col2; ctx.fillText('▬ ' + lbl2, gx + 248, y + h - 12, 240);
   }
   if (extraText) {
-    ctx.fillStyle = '#fde047'; ctx.fillText(extraText, gx + 6, gy + 16);
+    ctx.fillStyle = '#fde047'; ctx.fillText(extraText, gx + 6, gy + 16, gw - 12);
   }
 }
 
 function drawBarsAndGapPanel(ctx, x, y, w, h, title, bars, protocolLine, limLine, gapLine) {
   drawPanel(ctx, x, y, w, h, title);
 
-  ctx.fillStyle = '#c084fc'; ctx.font = 'bold 11.5px Inter, Cairo, sans-serif';
-  ctx.fillText('🧪 Protocol: ' + protocolLine, x + 12, y + 44);
+  ctx.fillStyle = '#c084fc'; ctx.font = 'bold 11px Inter, Cairo, sans-serif';
+  ctx.fillText('🧪 Protocol: ' + protocolLine, x + 12, y + 44, w - 24);
 
   const startY = y + 58;
   const rowH = 26;
   bars.forEach(([lbl, valTxt, ratio, col], i) => {
     const by = startY + i * rowH;
-    ctx.fillStyle = '#cbd5e1'; ctx.font = 'bold 11px Inter, sans-serif';
-    ctx.fillText(lbl, x + 12, by + 13);
+    ctx.fillStyle = '#cbd5e1'; ctx.font = 'bold 10.8px Inter, sans-serif';
+    ctx.fillText(lbl, x + 12, by + 13, 170);
 
-    const barX = x + 190, barW = w - 285;
+    const barX = x + 186, barW = w - 316;
     ctx.fillStyle = '#1e293b';
     ctx.beginPath(); ctx.roundRect(barX, by + 2, barW, 14, 4); ctx.fill();
     ctx.fillStyle = col;
     ctx.beginPath(); ctx.roundRect(barX, by + 2, Math.max(6, barW * Math.min(1, ratio)), 14, 4); ctx.fill();
 
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Fira Code, monospace';
-    ctx.fillText(valTxt, barX + barW + 8, by + 13);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 10.5px Fira Code, monospace';
+    ctx.fillText(valTxt, barX + barW + 8, by + 13, 114);
   });
 
   // Limitation & NMDT Gap boxes at bottom
   const ly = y + h - 88;
   ctx.fillStyle = 'rgba(239, 68, 68, 0.12)'; ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.2;
   ctx.beginPath(); ctx.roundRect(x + 10, ly, w - 20, 36, 5); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = '#fca5a5'; ctx.font = 'bold 11px Inter, Cairo, sans-serif';
-  ctx.fillText('⚠️ Limitation: ' + limLine, x + 18, ly + 22);
+  ctx.fillStyle = '#fca5a5'; ctx.font = 'bold 10.8px Inter, Cairo, sans-serif';
+  ctx.fillText('⚠️ Limitation: ' + limLine, x + 16, ly + 22, w - 32);
 
   const gy = y + h - 46;
   ctx.fillStyle = 'rgba(6, 182, 212, 0.14)'; ctx.strokeStyle = '#06b6d4'; ctx.lineWidth = 1.2;
   ctx.beginPath(); ctx.roundRect(x + 10, gy, w - 20, 36, 5); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = '#67e8f9'; ctx.font = 'bold 11px Inter, Cairo, sans-serif';
-  ctx.fillText('🚀 Our NMDT Fix: ' + gapLine, x + 18, gy + 22);
+  ctx.fillStyle = '#67e8f9'; ctx.font = 'bold 10.8px Inter, Cairo, sans-serif';
+  ctx.fillText('🚀 Our NMDT Fix: ' + gapLine, x + 16, gy + 22, w - 32);
 }
 
 // ============================================================================
